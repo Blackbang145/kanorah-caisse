@@ -1,0 +1,18 @@
+{
+  "name": "Kanorah Caisse Mobile",
+  "short_name": "Kanorah'Caisse",
+  "description": "Système de caisse mobile et enregistrement Google Sheets pour Kanorah",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "kanorah.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
