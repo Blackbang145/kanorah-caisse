@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Kanorah'Caisse Mobile</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Kanorah Caisse">
+    <link rel="apple-touch-icon" href="kanorah.jpeg">
+    
+    <link rel="manifest" href="manifest.json">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0f19;
+            -webkit-tap-highlight-color: transparent;
+            padding-top: env(safe-area-inset-top); /* Évite que l'encoche du téléphone cache le haut */
+        }
+        .mono { font-family: 'Space Mono', monospace; }
+        
+        @media print {
+            body, html, #tab-sales, #tab-stock, #tab-config, nav, header, .no-print, .fixed {
+                display: none !important;
+                visibility: hidden !important;
+            }
+            #receipt-modal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                background: white !important;
+                display: block !important;
+            }
+            #receipt-print {
+                width: 72mm !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+                background: white !important;
+                font-size: 12px !important;
+            }
+            #receipt-print * {
+                color: #000000 !important;
+                background: transparent !important;
+                visibility: visible !important;
+            }
+            #receipt-logo {
+                filter: grayscale(100%) contrast(120%);
+                max-width: 50mm !important;
+            }
+        }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col justify-between select-none">
+
+    <div id="lock-screen" class="hidden fixed inset-0 bg-[#0b0f19] z-[9999] flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-20 h-20 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center text-rose-500 text-3xl mb-4">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h2 class="text-xl font-bold text-white mb-2">Application Suspendue</h2>
+        <p class="text-sm text-slate-400 max-w-xs leading-relaxed">Cette application de caisse est temporairement désactivée. Veuillez contacter le développeur pour rétablir l'accès.</p>
+    </div>
+
+    <div id="app-content" class="w-full max-w-md mx-auto bg-slate-900 min-h-screen shadow-2xl flex flex-col justify-between relative pb-20">
+        
+        <header class="bg-slate-950 p-4 border-b border-slate-800 flex justify-between items-center sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <img src="kanorah.jpeg" alt="Logo" class="w-10 h-10 rounded-full object-cover border border-slate-700 bg-white">
+                <div>
+                    <h1 class="text-base font-bold text-white tracking-wide">KANORAH</h1>
+                    <span class="text-xs text-amber-500 font-medium">● Caisse Mobile Pro</span>
+                </div>
+            </div>
+            <button onclick="switchTab('config')" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </header>
+
+        <main class="flex-grow p-4 overflow-y-auto">
+            <section id="tab-sales" class="space-y-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-bold text-white">🛍️ Articles</h2>
+                    <span id="cart-badge" class="bg-amber-500 text-slate-950 text-xs font-bold px-2.5 py-1 rounded-full">0 article</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3" id="products-grid"></div>
+
+                <div class="bg-slate-950 rounded-2xl p-4 border border-slate-800 space-y-4 mt-6">
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Panier & Livraison</h3>
+                    <div id="cart-items" class="space-y-3 max-h-48 overflow-y-auto pr-1">
+                        <p class="text-sm text-slate-500 text-center py-4">Le panier est actuellement vide.</p>
+                    </div>
+
+                    <div class="border-t border-slate-800 pt-3 flex justify-between items-center">
+                        <span class="text-sm text-slate-400">Total à payer</span>
+                        <span id="total-amount" class="text-xl font-bold text-amber-500">0 XOF</span>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <input type="text" id="client-name" placeholder="Nom du client" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-white">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="tel" id="client-contact" placeholder="Contact" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-white">
+                            <input type="text" id="client-lieu" placeholder="Lieu livraison" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-white">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <span class="text-xs text-slate-400 font-medium">Somme reçue du client</span>
+                        <div class="flex gap-2">
+                            <input type="number" id="cash-received" oninput="calculateChange()" placeholder="Montant versé" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 font-bold text-lg">
+                            <button onclick="quickCash(1000)" class="bg-slate-800 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-700">1K</button>
+                            <button onclick="quickCash(5000)" class="bg-slate-800 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-700">5K</button>
+                            <button onclick="quickCash(10000)" class="bg-slate-800 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-700">10K</button>
+                        </div>
+                        <div class="flex justify-between items-center text-xs pt-1">
+                            <span class="text-slate-400">Monnaie à rendre :</span>
+                            <span id="change-to-render" class="font-bold text-emerald-400 text-sm">0 XOF</span>
+                        </div>
+                    </div>
+
+                    <button onclick="validateSale()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-check text-lg"></i> Valider & Générer le Reçu
+                    </button>
+                </div>
+            </section>
+
+            <section id="tab-stock" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">📦 Catalogue Articles</h2>
+                    <button onclick="openAddProductModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> Nouveau
+                    </button>
+                </div>
+                <div class="space-y-2" id="stock-list"></div>
+            </section>
+
+            <section id="tab-config" class="hidden space-y-4">
+                <h2 class="text-lg font-bold text-white">⚙️ Configuration & Connexion Excel</h2>
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="text-sm font-semibold text-amber-500 uppercase tracking-wider">1. Lien de connexion (Apps Script)</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Copiez ce script et collez-le dans l'éditeur de votre Google Sheets.</p>
+                    <textarea readonly class="w-full h-32 bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none" id="apps-script-code">
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ventes");
+  if (!sheet) {
+    sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("Ventes");
+    sheet.appendRow(["Date", "Client", "Produit", "Qté", "Prix Vente", "Montant"]);
+  }
+  var data = JSON.parse(e.postData.contents);
+  var date = new Date();
+  var dateString = Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  
+  data.items.forEach(function(item) {
+    sheet.appendRow([
+      dateString,
+      data.client + " (" + data.contact + " - " + data.lieu + ")",
+      item.name,
+      item.qty,
+      item.price,
+      item.total
+    ]);
+  });
+  return ContentService.createTextOutput(JSON.stringify({"status": "success"})).setMimeType(ContentService.MimeType.JSON);
+}
+                    </textarea>
+                    <button onclick="copyScript()" class="w-full bg-slate-800 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-copy"></i> Copier le code du script
+                    </button>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                    <h3 class="text-sm font-semibold text-amber-500 uppercase tracking-wider">2. Enregistrer l'URL de ton Webhook</h3>
+                    <input type="text" id="webhook-url" placeholder="Coller l'URL de déploiement Apps Script" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-white">
+                    <button onclick="saveWebhook()" class="w-full bg-amber-500 text-slate-950 font-bold py-3 rounded-xl text-sm">Enregistrer la liaison Google Sheets</button>
+                </div>
+            </section>
+        </main>
+
+        <nav class="absolute bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 h-16 flex justify-around items-center px-6 z-10 no-print">
+            <button onclick="switchTab('sales')" id="nav-sales" class="flex flex-col items-center gap-1 text-amber-500">
+                <i class="fa-solid fa-cash-register text-lg"></i>
+                <span class="text-[10px] font-semibold">Caisse</span>
+            </button>
+            <button onclick="switchTab('stock')" id="nav-stock" class="flex flex-col items-center gap-1 text-slate-500">
+                <i class="fa-solid fa-boxes-stacked text-lg"></i>
+                <span class="text-[10px] font-semibold">Stock</span>
+            </button>
+            <button onclick="switchTab('config')" id="nav-config" class="flex flex-col items-center gap-1 text-slate-500">
+                <i class="fa-solid fa-sliders text-lg"></i>
+                <span class="text-[10px] font-semibold">Liaison</span>
+            </button>
+        </nav>
+
+        <div id="receipt-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div class="bg-white text-slate-950 w-full max-w-sm rounded-2xl p-6 shadow-2xl flex flex-col justify-between max-h-[90vh]">
+                <div id="receipt-print" class="overflow-y-auto space-y-3 pr-1">
+                    <div class="flex flex-col items-center text-center">
+                        <img src="kanorah.jpeg" id="receipt-logo" alt="Logo Kanorah" class="w-24 h-24 object-contain mb-1">
+                        <h2 class="text-sm font-bold tracking-wider uppercase">KANORAH'S SKINCARE</h2>
+                        <p class="text-[9px] text-slate-600 tracking-tight">Vente & Livraison Professionnelle</p>
+                    </div>
+                    <div class="border-t border-dashed border-slate-400 my-2"></div>
+                    <div class="text-xs space-y-1">
+                        <p class="flex justify-between"><span>Date :</span><span id="rec-date" class="font-medium"></span></p>
+                        <p class="flex justify-between"><span>Ticket N° :</span><span id="rec-id" class="font-medium"></span></p>
+                    </div>
+                    <div class="border-t border-dashed border-slate-400 my-2"></div>
+                    <div class="text-xs space-y-1 bg-slate-100 p-2 rounded-lg" id="rec-client-section">
+                        <p class="font-bold text-[10px] text-slate-600 uppercase tracking-wider mb-1">Livraison</p>
+                        <p class="flex justify-between"><span>Client :</span><span id="rec-client-name" class="font-bold"></span></p>
+                        <p class="flex justify-between"><span>Contact :</span><span id="rec-client-phone"></span></p>
+                        <p class="flex justify-between"><span>Lieu :</span><span id="rec-client-place"></span></p>
+                    </div>
+                    <div class="border-t border-dashed border-slate-400 my-2"></div>
+                    <div class="text-xs space-y-2">
+                        <div class="flex justify-between font-bold text-[10px] text-slate-600 uppercase">
+                            <span>Désignation</span><span>Total</span>
+                        </div>
+                        <div id="rec-items-list" class="space-y-1"></div>
+                    </div>
+                    <div class="border-t border-dashed border-slate-400 my-2"></div>
+                    <div class="text-xs space-y-1.5">
+                        <p class="flex justify-between text-sm font-bold"><span>TOTAL :</span><span id="rec-total"></span></p>
+                        <p class="flex justify-between text-slate-600"><span>Somme Reçue :</span><span id="rec-received"></span></p>
+                        <p class="flex justify-between font-bold text-emerald-700"><span>Monnaie Rendue :</span><span id="rec-change"></span></p>
+                    </div>
+                    <div class="border-t border-dashed border-slate-400 my-2"></div>
+                    <div class="text-center text-[9px] text-slate-500 leading-tight">
+                        <p class="font-bold text-slate-700 mb-1">NB : Les produits saisis ne sont retournés ni échangés.</p>
+                        <p>Merci pour votre confiance ! À bientôt !</p>
+                    </div>
+                </div>
+                <div class="mt-6 space-y-2 no-print">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-print"></i> Imprimer</button>
+                        <button onclick="shareOnWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5"><i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp</button>
+                    </div>
+                    <button onclick="closeReceipt()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 rounded-xl text-xs">Fermer & Nouvelle Vente</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="product-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 w-full max-w-sm space-y-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">🛒 Nouveau Produit</h3>
+                <div class="space-y-3">
+                    <input type="text" id="new-prod-name" placeholder="Nom de l'article" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none">
+                    <input type="number" id="new-prod-price" placeholder="Prix de vente (XOF)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none">
+                    <input type="number" id="new-prod-cost" placeholder="Prix d'achat fournisseur (XOF)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                    <button onclick="closeAddProductModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl text-xs">Annuler</button>
+                    <button onclick="saveNewProduct()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-xl text-xs">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SÉCURITÉ DE VÉRIFICATION DISTANTE (Anti-non-paiement)
+        // Charge un petit fichier JSON depuis le même dépôt GitHub pour voir si l'accès est accordé
+        fetch('status.json?t=' + Date.now())
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.active === false) {
+                    document.getElementById('lock-screen').classList.remove('hidden');
+                    document.getElementById('app-content').classList.add('hidden');
+                }
+            })
+            .catch(err => console.log("Contrôle d'accès actif"));
+
+        let defaultProducts = [
+            { id: "201", name: "CeraVe Gel Moussant Peaux Grasses", price: 11500, cost: 0 },
+            { id: "202", name: "CeraVe Gel Nettoyant Anti-Rugosités (236ml)", price: 12500, cost: 0 },
+            { id: "203", name: "La Roche-Posay Effaclar Gel Moussant", price: 4500, cost: 0 },
+            { id: "204", name: "Kojie San Savon (65g)", price: 4500, cost: 0 },
+            { id: "205", name: "The Ordinary Toner Acide Glycolique 7%", price: 12500, cost: 0 },
+            { id: "206", name: "CeraVe Soin Concentré Anti-Imperfections", price: 12500, cost: 0 },
+            { id: "207", name: "LRP Mela B3 Sérum (Grand — 30ml)", price: 35000, cost: 0 },
+            { id: "208", name: "LRP Mela B3 Sérum (Mini)", price: 8500, cost: 0 },
+            { id: "209", name: "The Ordinary Niacinamide 10% + Zinc 1%", price: 9500, cost: 0 },
+            { id: "210", name: "CeraVe Gel-Crème Oil Control", price: 13500, cost: 0 },
+            { id: "211", name: "LRP Anthelios UVMUNE 400 (Grand)", price: 14500, cost: 0 },
+            { id: "212", name: "LRP Anthelios UVMUNE 400 (Petit)", price: 7500, cost: 0 }
+        ];
+
+        let products = JSON.parse(localStorage.getItem('kanorah_catalog')) || defaultProducts;
+        let cart = [];
+        let webhookUrl = localStorage.getItem('kanorah_webhook') || "";
+
+        document.getElementById('webhook-url').value = webhookUrl;
+        renderProducts(); renderStock();
+
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = '';
+            products.forEach(p => {
+                grid.innerHTML += `
+                    <div onclick="addToCart('${p.id}')" class="bg-slate-950 hover:bg-slate-800 p-4 rounded-2xl border border-slate-800 cursor-pointer transition-all active:scale-95 flex flex-col justify-between h-28">
+                        <span class="text-xs text-amber-500 font-bold">ID: ${p.id}</span>
+                        <h4 class="text-sm font-semibold text-white line-clamp-2">${p.name}</h4>
+                        <span class="text-sm font-bold text-slate-300">${p.price.toLocaleString()} XOF</span>
+                    </div>
+                `;
+            });
+        }
+
+        function renderStock() {
+            const list = document.getElementById('stock-list');
+            list.innerHTML = '';
+            products.forEach(p => {
+                list.innerHTML += `
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <div>
+                            <h4 class="font-semibold text-white text-sm">${p.name}</h4>
+                            <p class="text-xs text-slate-500">ID: ${p.id} — Coût: ${p.cost} XOF</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-amber-500 text-sm">${p.price.toLocaleString()} XOF</span>
+                            <button onclick="deleteProduct('${p.id}')" class="text-rose-500 hover:text-rose-400 text-sm"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addToCart(id) {
+            const prod = products.find(p => p.id === id); if (!prod) return;
+            const existing = cart.find(item => item.id === id);
+            if (existing) { existing.qty++; existing.total = existing.qty * existing.price; }
+            else { cart.push({ id: prod.id, name: prod.name, price: prod.price, qty: 1, total: prod.price }); }
+            updateCart();
+        }
+
+        function updateCart() {
+            const container = document.getElementById('cart-items');
+            const badge = document.getElementById('cart-badge');
+            const totalLabel = document.getElementById('total-amount');
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-sm text-slate-500 text-center py-4">Le panier est actuellement vide.</p>';
+                badge.innerText = '0 article'; totalLabel.innerText = '0 XOF';
+                document.getElementById('change-to-render').innerText = '0 XOF'; return;
+            }
+
+            badge.innerText = `${cart.reduce((sum, item) => sum + item.qty, 0)} articles`;
+            container.innerHTML = ''; let total = 0;
+            cart.forEach((item, index) => {
+                total += item.total;
+                container.innerHTML += `
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex-grow">
+                            <span class="font-semibold text-white">${item.name}</span>
+                            <p class="text-xs text-slate-400">${item.qty}x ${item.price.toLocaleString()} XOF</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-slate-300">${item.total.toLocaleString()} XOF</span>
+                            <button onclick="removeFromCart(${index})" class="text-rose-500 hover:text-rose-400"><i class="fa-solid fa-circle-minus"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            totalLabel.innerText = `${total.toLocaleString()} XOF`; calculateChange();
+        }
+
+        function removeFromCart(index) { cart.splice(index, 1); updateCart(); }
+        function quickCash(amount) { document.getElementById('cash-received').value = amount; calculateChange(); }
+
+        function calculateChange() {
+            const total = cart.reduce((sum, item) => sum + item.total, 0);
+            const received = parseFloat(document.getElementById('cash-received').value) || 0;
+            const changeLabel = document.getElementById('change-to-render');
+            if (received < total) { changeLabel.innerText = "Somme insuffisante"; changeLabel.className = "font-bold text-rose-500 text-sm"; }
+            else { const change = received - total; changeLabel.innerText = `${change.toLocaleString()} XOF`; changeLabel.className = "font-bold text-emerald-400 text-sm"; }
+        }
+
+        function switchTab(tabId) {
+            document.getElementById('tab-sales').classList.add('hidden'); document.getElementById('tab-stock').classList.add('hidden'); document.getElementById('tab-config').classList.add('hidden');
+            document.getElementById('nav-sales').className = 'flex flex-col items-center gap-1 text-slate-500'; document.getElementById('nav-stock').className = 'flex flex-col items-center gap-1 text-slate-500'; document.getElementById('nav-config').className = 'flex flex-col items-center gap-1 text-slate-500';
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden'); document.getElementById(`nav-${tabId}`).className = 'flex flex-col items-center gap-1 text-amber-500';
+        }
+
+        function openAddProductModal() { document.getElementById('product-modal').classList.remove('hidden'); }
+        function closeAddProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+        function saveNewProduct() {
+            const name = document.getElementById('new-prod-name').value.trim(); const price = parseFloat(document.getElementById('new-prod-price').value); const cost = parseFloat(document.getElementById('new-prod-cost').value);
+            if (!name || isNaN(price) || isNaN(cost)) return alert("Veuillez remplir correctement tous les champs.");
+            const newId = (100 + products.length + 1).toString(); products.push({ id: newId, name, price, cost });
+            localStorage.setItem('kanorah_catalog', JSON.stringify(products)); renderProducts(); renderStock(); closeAddProductModal();
+            document.getElementById('new-prod-name').value = ''; document.getElementById('new-prod-price').value = ''; document.getElementById('new-prod-cost').value = '';
+        }
+
+        function deleteProduct(id) {
+            if (confirm("Supprimer définitivement ce produit du catalogue ?")) { products = products.filter(p => p.id !== id); localStorage.setItem('kanorah_catalog', JSON.stringify(products)); renderProducts(); renderStock(); }
+        }
+
+        function saveWebhook() { const url = document.getElementById('webhook-url').value.trim(); localStorage.setItem('kanorah_webhook', url); webhookUrl = url; alert("Liaison Google Sheets enregistrée !"); }
+        function copyScript() { const code = document.getElementById('apps-script-code'); code.select(); document.execCommand('copy'); alert("Le code Apps Script a été copié."); }
+
+        function validateSale() {
+            if (cart.length === 0) return alert("Le panier est vide.");
+            const total = cart.reduce((sum, item) => sum + item.total, 0);
+            const received = parseFloat(document.getElementById('cash-received').value) || 0;
+            if (received < total) return alert("La somme reçue est insuffisante.");
+
+            const name = document.getElementById('client-name').value || "Client Comptant"; const contact = document.getElementById('client-contact').value || "N/A"; const lieu = document.getElementById('client-lieu').value || "Boutique"; const change = received - total;
+            const ticketId = Math.floor(100000 + Math.random() * 900000); const dateStr = new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+
+            document.getElementById('rec-date').innerText = dateStr; document.getElementById('rec-id').innerText = ticketId; document.getElementById('rec-client-name').innerText = name.toUpperCase(); document.getElementById('rec-client-phone').innerText = contact; document.getElementById('rec-client-place').innerText = lieu;
+            
+            const list = document.getElementById('rec-items-list'); list.innerHTML = '';
+            cart.forEach(item => { list.innerHTML += `<div class="flex justify-between"><span>${item.qty}x ${item.name}</span><span>${item.total.toLocaleString()} XOF</span></div>`; });
+            document.getElementById('rec-total').innerText = `${total.toLocaleString()} XOF`; document.getElementById('rec-received').innerText = `${received.toLocaleString()} XOF`; document.getElementById('rec-change').innerText = `${change.toLocaleString()} XOF`;
+
+            if (webhookUrl) {
+                const data = { client: name, contact: contact, lieu: lieu, items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price, total: i.total })) };
+                fetch(webhookUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(err => console.error("Erreur Sheets:", err));
+            }
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        function shareOnWhatsApp() {
+            const name = document.getElementById('rec-client-name').innerText; const phone = document.getElementById('rec-client-phone').innerText; const place = document.getElementById('rec-client-place').innerText; const total = document.getElementById('rec-total').innerText; const received = document.getElementById('rec-received').innerText; const change = document.getElementById('rec-change').innerText; const ticketId = document.getElementById('rec-id').innerText; const dateStr = document.getElementById('rec-date').innerText;
+            let itemsText = ""; cart.forEach(item => { itemsText += `• ${item.qty}x ${item.name} — ${item.total.toLocaleString()} XOF\n`; });
+            let message = `🧾 *KANORAH'S BOUTIQUE* 🧾\n_Vente & Livraison Professionnelle_\n\n📅 *Date :* ${dateStr}\n🔢 *Ticket N° :* ${ticketId}\n\n-------------------------\n📦 *DÉTAILS COMMANDE :*\n${itemsText}-------------------------\n\n💰 *TOTAL :* ${total}\n💵 *Somme Reçue :* ${received}\n🤝 *Monnaie Rendue :* ${change}\n\n📍 *LIVRAISON :*\n• *Client :* ${name}\n• *Contact :* ${phone}\n• *Lieu :* ${place}\n\n*NB :* Les produits saisis ne sont retournés ni échangés.\nMerci pour votre confiance ! À bientôt ! ✨`;
+            const encodedMessage = encodeURIComponent(message); const cleanPhone = phone.replace(/[^0-9]/g, "");
+            let whatsappUrl = cleanPhone.length >= 8 ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}` : `https://api.whatsapp.com/send?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function closeReceipt() { cart = []; updateCart(); document.getElementById('client-name').value = ''; document.getElementById('client-contact').value = ''; document.getElementById('client-lieu').value = ''; document.getElementById('cash-received').value = ''; document.getElementById('receipt-modal').classList.add('hidden'); }
+    </script>
+</body>
+</html>
