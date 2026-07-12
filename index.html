@@ -266,8 +266,8 @@ function doPost(e) {
                         <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-print"></i> Imprimer 58mm
                         </button>
-                        <button onclick="downloadReceiptPDF()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-file-pdf text-sm"></i> Ouvrir PDF
+                        <button onclick="openReceiptInNativeViewer()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-file-invoice text-sm"></i> Ouvrir (Lecteur Tel)
                         </button>
                     </div>
                     <button onclick="shareOnWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
@@ -461,8 +461,8 @@ function doPost(e) {
             document.getElementById('receipt-modal').classList.remove('hidden');
         }
 
-        // Nouvelle fonctionnalité pour ouvrir le reçu directement via le lecteur PDF natif du mobile
-        function downloadReceiptPDF() {
+        // Fonction maîtresse optimisée pour ouvrir instantanément via le lecteur de document/PDF par défaut du téléphone
+        function openReceiptInNativeViewer() {
             const element = document.getElementById('receipt-print');
             const ticketId = document.getElementById('rec-id').innerText;
             
@@ -471,11 +471,19 @@ function doPost(e) {
                 filename: `Facture_Kanorah_${ticketId}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 3, useCORS: true },
-                jsPDF: { unit: 'mm', format: [58, 140], orientation: 'portrait' } // Format d'affichage mobile continu 58mm
+                jsPDF: { unit: 'mm', format: [58, 145], orientation: 'portrait' }
             };
 
-            // Génère et télécharge le fichier, ce qui l'ouvre directement via le gestionnaire PDF du téléphone
-            html2pdf().set(options).from(element).save();
+            // Génération de la sortie brute sous forme de fichier blob ouvert à la volée
+            html2pdf().set(options).from(element).output('blob').then(function (blob) {
+                const fileURL = URL.createObjectURL(blob);
+                const pdfWindow = window.open(fileURL, '_blank');
+                
+                // Secours mobile : Si le navigateur bloque l'ouverture d'un nouvel onglet, force le téléchargement direct qui active la notification du lecteur système
+                if(!pdfWindow || pdfWindow.closed || typeof pdfWindow.closed == 'undefined') {
+                    html2pdf().set(options).from(element).save();
+                }
+            });
         }
 
         function shareOnWhatsApp() {
