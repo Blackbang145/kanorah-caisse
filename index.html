@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kanorah'Caisse Mobile</title>
+    <title>Kanorah's Caisse Mobile</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -27,7 +27,7 @@
         
         @page { size: 58mm auto; margin: 0; }
         @media print {
-            body, html, #tab-sales, #tab-stock, #tab-config, nav, header, .no-print, .fixed {
+            body, html, #tab-sales, #tab-web, #tab-stock, #tab-config, nav, header, .no-print, .fixed {
                 display: none !important;
                 visibility: hidden !important;
             }
@@ -48,22 +48,15 @@
 </head>
 <body class="text-slate-200 min-h-screen flex flex-col justify-between select-none">
 
-    <div id="lock-screen" class="hidden fixed inset-0 bg-[#0b0f19] z-[9999] flex flex-col items-center justify-center p-6 text-center">
-        <div class="w-20 h-20 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center text-rose-500 text-3xl mb-4">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
-        <h2 class="text-xl font-bold text-white mb-2">Application Suspendue</h2>
-        <p class="text-sm text-slate-400 max-w-xs leading-relaxed">Cette application de caisse est temporairement désactivée. Veuillez contacter le développeur pour rétablir l'accès.</p>
-    </div>
-
     <div id="app-content" class="w-full max-w-md mx-auto bg-slate-900 min-h-screen shadow-2xl flex flex-col justify-between relative pb-20">
         
+        <!-- HEADER -->
         <header class="bg-slate-950 p-4 border-b border-slate-800 flex justify-between items-center sticky top-0 z-10">
             <div class="flex items-center gap-3">
                 <img src="kanorah.jpeg" alt="Logo" class="w-10 h-10 rounded-full object-cover border border-slate-700 bg-white">
                 <div>
-                    <h1 class="text-base font-bold text-white tracking-wide">KANORAH</h1>
-                    <span class="text-xs text-amber-500 font-medium">● Caisse Mobile Pro</span>
+                    <h1 class="text-base font-bold text-white tracking-wide">KANORAH'S</h1>
+                    <span class="text-[11px] text-pink-400 font-medium">skincare story</span>
                 </div>
             </div>
             <button onclick="switchTab('config')" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300">
@@ -72,7 +65,22 @@
         </header>
 
         <main class="flex-grow p-4 overflow-y-auto">
-            <!-- Onglet Ventes -->
+            
+            <!-- BANNIÈRE DE NOTIFICATION FLASH (CLIQUEZ POUR VOIR) -->
+            <div id="order-notification" class="hidden bg-gradient-to-r from-pink-600 to-rose-600 text-white p-3.5 rounded-2xl mb-4 border border-pink-400 flex justify-between items-center animate-bounce shadow-lg cursor-pointer" onclick="switchTab('web')">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-xl">
+                        🔔
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider">Nouvelle Commande Web !</h4>
+                        <p id="notif-details" class="text-[11px] text-pink-100">Cliquer pour consulter les détails</p>
+                    </div>
+                </div>
+                <span class="bg-slate-950/40 text-white text-[10px] px-2.5 py-1 rounded-lg font-bold">Voir →</span>
+            </div>
+
+            <!-- ONGLET 1 : CAISSE & VENTES -->
             <section id="tab-sales" class="space-y-4">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-lg font-bold text-white">🛍️ Articles</h2>
@@ -81,7 +89,7 @@
                 <div class="grid grid-cols-2 gap-3" id="products-grid"></div>
 
                 <div class="bg-slate-950 rounded-2xl p-4 border border-slate-800 space-y-4 mt-6">
-                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Panier & Livraison</h3>
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Panier & Client</h3>
                     <div id="cart-items" class="space-y-3 max-h-48 overflow-y-auto pr-1">
                         <p class="text-sm text-slate-500 text-center py-4">Le panier est actuellement vide.</p>
                     </div>
@@ -103,9 +111,9 @@
                         <span class="text-xs text-slate-400 font-medium">Somme reçue du client</span>
                         <div class="flex gap-2">
                             <input type="number" id="cash-received" oninput="calculateChange()" placeholder="Montant versé" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-amber-500 focus:outline-none focus:border-amber-500 font-bold text-lg placeholder-slate-600">
-                            <button onclick="quickCash(1000)" class="bg-slate-800 text-slate-300 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-700 active:scale-95 transition-all">1K</button>
-                            <button onclick="quickCash(5000)" class="bg-slate-800 text-slate-300 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-700 active:scale-95 transition-all">5K</button>
-                            <button onclick="quickCash(10000)" class="bg-slate-800 text-slate-300 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-700 active:scale-95 transition-all">10K</button>
+                            <button onclick="quickCash(1000)" class="bg-slate-800 text-slate-300 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-700">1K</button>
+                            <button onclick="quickCash(5000)" class="bg-slate-800 text-slate-300 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-700">5K</button>
+                            <button onclick="quickCash(10000)" class="bg-slate-800 text-slate-300 px-3 py-1 rounded text-xs font-semibold hover:bg-slate-700">10K</button>
                         </div>
                         <div class="flex justify-between items-center text-xs pt-1">
                             <span class="text-slate-400">Monnaie à rendre :</span>
@@ -119,7 +127,24 @@
                 </div>
             </section>
 
-            <!-- Onglet Stock -->
+            <!-- ONGLET 2 : COMMANDES WEB (NOUVELLE SECTION) -->
+            <section id="tab-web" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">🌐 Commandes En Ligne</h2>
+                        <p class="text-xs text-slate-400">Historique des commandes envoyées depuis le site</p>
+                    </div>
+                    <button onclick="clearWebOrders()" class="text-xs text-rose-400 bg-rose-500/10 px-2.5 py-1.5 rounded-lg border border-rose-500/20 hover:bg-rose-500/20">
+                        Effacer tout
+                    </button>
+                </div>
+
+                <div id="web-orders-container" class="space-y-3">
+                    <!-- Les cartes de commandes s'affichent ici -->
+                </div>
+            </section>
+
+            <!-- ONGLET 3 : STOCK -->
             <section id="tab-stock" class="hidden space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-lg font-bold text-white">📦 Stock & Catalogue</h2>
@@ -130,11 +155,10 @@
                 <div class="space-y-2" id="stock-list"></div>
             </section>
 
-            <!-- Onglet Configuration -->
+            <!-- ONGLET 4 : CONFIGURATION & GOOGLE SHEETS -->
             <section id="tab-config" class="hidden space-y-4">
                 <h2 class="text-lg font-bold text-white">⚙️ Fin de Journée & Rapport Sheets</h2>
                 
-                <!-- BOUTON FIN DE JOURNÉE -->
                 <div class="bg-slate-950 p-5 rounded-2xl border border-amber-500/30 text-center space-y-3">
                     <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center text-amber-500 mx-auto text-xl">
                         <i class="fa-solid fa-calendar-check"></i>
@@ -148,54 +172,24 @@
                     </button>
                 </div>
 
-                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-4">
-                    <h3 class="text-sm font-semibold text-amber-500 uppercase tracking-wider">1. Nouveau Script Google Sheets</h3>
-                    <p class="text-xs text-slate-400 leading-relaxed">Remplacez votre ancien script par celui-ci pour pouvoir traiter le rapport de fin de journée.</p>
-                    <textarea readonly class="w-full h-32 bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none" id="apps-script-code">
-function doPost(e) {
-  var data = JSON.parse(e.postData.contents);
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // 1. Feuille Bilans
-  var reportSheet = ss.getSheetByName("Bilans_Journee");
-  if (!reportSheet) {
-    reportSheet = ss.insertSheet("Bilans_Journee");
-    reportSheet.appendRow(["Date Clôture", "Nombre Ventes", "Chiffre d'Affaires total"]);
-  }
-  reportSheet.appendRow([data.date, data.totalSalesCount, data.revenueTotal + " XOF"]);
-  
-  // 2. Feuille Stocks Actuels
-  var stockSheet = ss.getSheetByName("Etat_Stocks");
-  if (!stockSheet) {
-    stockSheet = ss.insertSheet("Etat_Stocks");
-  }
-  stockSheet.clear();
-  stockSheet.appendRow(["ID Produit", "Nom de l'article", "Stock Restant", "Prix Vente"]);
-  
-  data.currentStock.forEach(function(p) {
-    stockSheet.appendRow([p.id, p.name, p.stock, p.price + " XOF"]);
-  });
-  
-  return ContentService.createTextOutput(JSON.stringify({"status": "success"})).setMimeType(ContentService.MimeType.JSON);
-}
-                    </textarea>
-                    <button onclick="copyScript()" class="w-full bg-slate-800 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-copy"></i> Copier le code du script
-                    </button>
-                </div>
-
                 <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-                    <h3 class="text-sm font-semibold text-amber-500 uppercase tracking-wider">2. Webhook URL</h3>
+                    <h3 class="text-sm font-semibold text-amber-500 uppercase tracking-wider">Webhook URL Google Sheets</h3>
                     <input type="text" id="webhook-url" placeholder="Coller l'URL de déploiement Apps Script" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-white">
                     <button onclick="saveWebhook()" class="w-full bg-amber-500 text-slate-950 font-bold py-3 rounded-xl text-sm">Enregistrer la liaison Google Sheets</button>
                 </div>
             </section>
         </main>
 
-        <nav class="absolute bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 h-16 flex justify-around items-center px-6 z-10 no-print">
+        <!-- NAV BAR BAS DE PAGE -->
+        <nav class="absolute bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 h-16 flex justify-around items-center px-4 z-10 no-print">
             <button onclick="switchTab('sales')" id="nav-sales" class="flex flex-col items-center gap-1 text-amber-500">
                 <i class="fa-solid fa-cash-register text-lg"></i>
                 <span class="text-[10px] font-semibold">Caisse</span>
+            </button>
+            <button onclick="switchTab('web')" id="nav-web" class="flex flex-col items-center gap-1 text-slate-500 relative">
+                <i class="fa-solid fa-globe text-lg"></i>
+                <span class="text-[10px] font-semibold">Commandes</span>
+                <span id="web-badge" class="hidden absolute -top-1 -right-1 bg-pink-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950">0</span>
             </button>
             <button onclick="switchTab('stock')" id="nav-stock" class="flex flex-col items-center gap-1 text-slate-500">
                 <i class="fa-solid fa-boxes-stacked text-lg"></i>
@@ -203,18 +197,18 @@ function doPost(e) {
             </button>
             <button onclick="switchTab('config')" id="nav-config" class="flex flex-col items-center gap-1 text-slate-500">
                 <i class="fa-solid fa-sliders text-lg"></i>
-                <span class="text-[10px] font-semibold">Bilan/Lien</span>
+                <span class="text-[10px] font-semibold">Bilan</span>
             </button>
         </nav>
 
-        <!-- Modals -->
+        <!-- FACTURE / REÇU MODAL -->
         <div id="receipt-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div class="bg-white text-slate-950 w-full max-w-sm rounded-2xl p-5 shadow-2xl flex flex-col justify-between max-h-[95vh]">
                 <div class="overflow-y-auto pr-1 flex-grow">
                     <div id="receipt-print" class="bg-white p-2 space-y-3">
                         <div class="flex flex-col items-center text-center">
-                            <img src="kanorah.jpeg" id="receipt-logo" alt="Logo Kanorah" class="w-20 h-20 object-contain mb-1 rounded-full">
-                            <h2 class="text-[11px] font-bold tracking-wider uppercase text-black">KANORAH'S SKINCARE</h2>
+                            <img src="kanorah.jpeg" id="receipt-logo" alt="Logo Kanorah" class="w-16 h-16 object-contain mb-1 rounded-full">
+                            <h2 class="text-[11px] font-bold tracking-wider uppercase text-black">KANORAH'S SKINCARE STORY</h2>
                             <p class="text-[9px] text-gray-600 tracking-tight">Vente & Livraison Professionnelle</p>
                         </div>
                         <div class="border-t border-dashed border-gray-400 my-2"></div>
@@ -223,7 +217,7 @@ function doPost(e) {
                             <p class="flex justify-between"><span>Ticket N° :</span><span id="rec-id" class="font-medium"></span></p>
                         </div>
                         <div class="border-t border-dashed border-gray-400 my-2"></div>
-                        <div class="text-[10px] space-y-1 bg-gray-100 p-2 rounded-lg text-black" id="rec-client-section">
+                        <div class="text-[10px] space-y-1 bg-gray-100 p-2 rounded-lg text-black">
                             <p class="font-bold text-[9px] text-gray-600 uppercase tracking-wider mb-1">Livraison</p>
                             <p class="flex justify-between"><span>Client :</span><span id="rec-client-name" class="font-bold"></span></p>
                             <p class="flex justify-between"><span>Contact :</span><span id="rec-client-phone"></span></p>
@@ -255,7 +249,7 @@ function doPost(e) {
                             <i class="fa-solid fa-print"></i> Imprimer 58mm
                         </button>
                         <button onclick="openReceiptInNativeViewer()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-file-invoice text-sm"></i> Ouvrir (Lecteur Tel)
+                            <i class="fa-solid fa-file-invoice text-sm"></i> Ouvrir PDF
                         </button>
                     </div>
                     <button onclick="shareOnWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
@@ -268,13 +262,13 @@ function doPost(e) {
             </div>
         </div>
 
+        <!-- MODAL AJOUT PRODUIT -->
         <div id="product-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 w-full max-w-sm space-y-4">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">🛒 Nouveau Produit</h3>
                 <div class="space-y-3">
                     <input type="text" id="new-prod-name" placeholder="Nom de l'article" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none">
                     <input type="number" id="new-prod-price" placeholder="Prix de vente (XOF)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none">
-                    <input type="number" id="new-prod-cost" placeholder="Prix d'achat fournisseur (XOF)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none">
                     <input type="number" id="new-prod-stock" placeholder="Stock initial disponible" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-2">
@@ -286,32 +280,173 @@ function doPost(e) {
     </div>
 
     <script>
-        // Data structure révisée avec inclusion du stock local
         let defaultProducts = [
-            { id: "201", name: "CeraVe Gel Moussant Peaux Grasses", price: 11500, cost: 0, stock: 10 },
-            { id: "202", name: "CeraVe Gel Nettoyant Anti-Rugosités (236ml)", price: 12500, cost: 0, stock: 10 },
-            { id: "203", name: "La Roche-Posay Effaclar Gel Moussant", price: 4500, cost: 0, stock: 10 },
-            { id: "204", name: "Kojie San Savon (65g)", price: 4500, cost: 0, stock: 10 },
-            { id: "205", name: "The Ordinary Toner Acide Glycolique 7%", price: 12500, cost: 0, stock: 10 },
-            { id: "206", name: "CeraVe Soin Concentré Anti-Imperfections", price: 12500, cost: 0, stock: 10 },
-            { id: "207", name: "LRP Mela B3 Sérum (Grand — 30ml)", price: 35000, cost: 0, stock: 10 },
-            { id: "208", name: "LRP Mela B3 Sérum (Mini)", price: 8500, cost: 0, stock: 10 },
-            { id: "209", name: "The Ordinary Niacinamide 10% + Zinc 1%", price: 9500, cost: 0, stock: 10 },
-            { id: "210", name: "CeraVe Gel-Crème Oil Control", price: 13500, cost: 0, stock: 10 },
-            { id: "211", name: "LRP Anthelios UVMUNE 400 (Grand)", price: 14500, cost: 0, stock: 10 },
-            { id: "212", name: "LRP Anthelios UVMUNE 400 (Petit)", price: 7500, cost: 0, stock: 10 }
+            { id: "201", name: "CeraVe Gel Moussant Peaux Grasses", price: 11500, stock: 10 },
+            { id: "202", name: "CeraVe Gel Nettoyant Anti-Rugosités (236ml)", price: 12500, stock: 10 },
+            { id: "203", name: "La Roche-Posay Effaclar Gel Moussant", price: 4500, stock: 10 },
+            { id: "204", name: "Kojie San Savon (65g)", price: 4500, stock: 10 },
+            { id: "205", name: "Heartleaf 77% Toner (Anua)", price: 16500, stock: 10 },
+            { id: "206", name: "CeraVe Soin Concentré Anti-Imperfections", price: 12500, stock: 10 },
+            { id: "207", name: "LRP Mela B3 Sérum (Grand — 30ml)", price: 35000, stock: 10 },
+            { id: "208", name: "LRP Mela B3 Sérum (Mini)", price: 8500, stock: 10 },
+            { id: "209", name: "The Ordinary Niacinamide 10% + Zinc 1%", price: 9500, stock: 10 },
+            { id: "210", name: "CeraVe Gel-Crème Oil Control", price: 13500, stock: 10 },
+            { id: "211", name: "LRP Anthelios UVMUNE 400 (Grand)", price: 14500, stock: 10 },
+            { id: "212", name: "LRP Anthelios UVMUNE 400 (Petit)", price: 7500, stock: 10 }
         ];
 
         let products = JSON.parse(localStorage.getItem('kanorah_catalog')) || defaultProducts;
+        let webOrders = JSON.parse(localStorage.getItem('kanorah_web_orders')) || [];
         let cart = [];
         let webhookUrl = localStorage.getItem('kanorah_webhook') || "";
         
-        // Accumulateurs journaliers locaux
         let dailyRevenue = parseFloat(localStorage.getItem('kanorah_daily_revenue')) || 0;
         let dailySalesCount = parseInt(localStorage.getItem('kanorah_daily_sales_count')) || 0;
 
         document.getElementById('webhook-url').value = webhookUrl;
-        renderProducts(); renderStock();
+        renderProducts(); renderStock(); renderWebOrders();
+
+        // CANAL DE RECEPTION DES COMMANDES EN DIRECT
+        const kanorahChannel = new BroadcastChannel('kanorah_orders_channel');
+
+        kanorahChannel.onmessage = function (event) {
+            const order = event.data;
+            order.status = "Nouvelle";
+            order.id = "ORD-" + Math.floor(1000 + Math.random() * 9000);
+            
+            // Sauvegarder dans la liste des commandes web
+            webOrders.unshift(order);
+            localStorage.setItem('kanorah_web_orders', JSON.stringify(webOrders));
+
+            // Sonnerie d'alerte
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioContext.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioContext.currentTime);
+                osc.connect(audioContext.destination);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.3);
+            } catch(e) {}
+
+            // Afficher bannière flash
+            const notifBanner = document.getElementById('order-notification');
+            const notifDetails = document.getElementById('notif-details');
+            if (notifBanner && notifDetails) {
+                notifDetails.innerText = `${order.clientName} — ${order.total.toLocaleString()} XOF (${order.items.length} produit(s))`;
+                notifBanner.classList.remove('hidden');
+            }
+
+            renderWebOrders();
+        };
+
+        function renderWebOrders() {
+            const container = document.getElementById('web-orders-container');
+            const badge = document.getElementById('web-badge');
+            
+            const newCount = webOrders.filter(o => o.status === "Nouvelle").length;
+            if (newCount > 0) {
+                badge.innerText = newCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            if (webOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 bg-slate-950 rounded-2xl border border-slate-800">
+                        <div class="text-3xl mb-2">🌐</div>
+                        <p class="text-sm font-bold text-slate-300">Aucune commande reçue</p>
+                        <p class="text-xs text-slate-500 mt-1">Les commandes passées sur le site apparaîtront ici.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            webOrders.forEach((order, index) => {
+                const dateObj = new Date(order.timestamp);
+                const dateFormatted = dateObj.toLocaleDateString('fr-FR') + ' à ' + dateObj.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+                
+                let itemsListHtml = '';
+                order.items.forEach(it => {
+                    itemsListHtml += `<div class="flex justify-between text-xs text-slate-300"><span>• ${it.qty}x ${it.name}</span><span class="font-bold">${it.total.toLocaleString()} XOF</span></div>`;
+                });
+
+                const statusBadge = order.status === "Nouvelle" 
+                    ? `<span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Nouveau</span>`
+                    : `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Traité</span>`;
+
+                container.innerHTML += `
+                    <div class="bg-slate-950 rounded-2xl p-4 border ${order.status === 'Nouvelle' ? 'border-pink-500/50' : 'border-slate-800'} space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-white text-sm">${order.clientName}</h4>
+                                    ${statusBadge}
+                                </div>
+                                <p class="text-[11px] text-slate-400 mt-0.5"><i class="fa-solid fa-phone text-[9px] mr-1"></i>${order.clientPhone} | <i class="fa-solid fa-location-dot text-[9px] mr-1"></i>${order.clientAddress}</p>
+                                <p class="text-[10px] text-slate-500">${dateFormatted}</p>
+                            </div>
+                            <button onclick="deleteWebOrder(${index})" class="text-slate-600 hover:text-rose-400 text-xs"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+
+                        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800/80 space-y-1">
+                            ${itemsListHtml}
+                            <div class="border-t border-slate-800 pt-1 mt-1 flex justify-between text-xs font-bold text-amber-500">
+                                <span>Total commande :</span>
+                                <span>${order.total.toLocaleString()} XOF</span>
+                            </div>
+                        </div>
+
+                        <button onclick="chargerDansCaisse(${index})" class="w-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/20 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-cart-arrow-down"></i> Charger dans la Caisse
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function chargerDansCaisse(index) {
+            const order = webOrders[index];
+            order.status = "Traitée";
+            localStorage.setItem('kanorah_web_orders', JSON.stringify(webOrders));
+
+            document.getElementById('client-name').value = order.clientName;
+            document.getElementById('client-contact').value = order.clientPhone;
+            document.getElementById('client-lieu').value = order.clientAddress;
+
+            cart = order.items.map(item => ({
+                id: item.id || "WEB",
+                name: item.name,
+                price: item.price,
+                qty: item.qty,
+                total: item.total
+            }));
+
+            updateCart();
+            renderWebOrders();
+            dismissNotification();
+            switchTab('sales');
+        }
+
+        function deleteWebOrder(index) {
+            webOrders.splice(index, 1);
+            localStorage.setItem('kanorah_web_orders', JSON.stringify(webOrders));
+            renderWebOrders();
+        }
+
+        function clearWebOrders() {
+            if (confirm("Supprimer tout l'historique des commandes web ?")) {
+                webOrders = [];
+                localStorage.setItem('kanorah_web_orders', JSON.stringify(webOrders));
+                renderWebOrders();
+            }
+        }
+
+        function dismissNotification() {
+            document.getElementById('order-notification').classList.add('hidden');
+        }
 
         function renderProducts() {
             const grid = document.getElementById('products-grid');
@@ -345,7 +480,7 @@ function doPost(e) {
                             <button onclick="deleteProduct('${p.id}')" class="text-rose-500 hover:text-rose-400 text-sm"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <div class="flex items-center gap-2 bg-slate-900 p-2 rounded-lg border border-slate-800">
-                            <span class="text-xs text-slate-400 shrink-0">Modifier Qté Restante :</span>
+                            <span class="text-xs text-slate-400 shrink-0">Quantité en stock :</span>
                             <input type="number" value="${p.stock}" onchange="updateSingleStock('${p.id}', this.value)" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-500 font-bold text-center focus:outline-none focus:border-amber-500">
                         </div>
                     </div>
@@ -366,8 +501,6 @@ function doPost(e) {
 
         function addToCart(id) {
             const prod = products.find(p => p.id === id); if (!prod) return;
-            
-            // Sécurité anti-survente locale
             const currentCartItem = cart.find(item => item.id === id);
             const currentCartQty = currentCartItem ? currentCartItem.qty : 0;
             if(prod.stock <= currentCartQty) {
@@ -423,29 +556,37 @@ function doPost(e) {
         }
 
         function switchTab(tabId) {
-            document.getElementById('tab-sales').classList.add('hidden'); document.getElementById('tab-stock').classList.add('hidden'); document.getElementById('tab-config').classList.add('hidden');
-            document.getElementById('nav-sales').className = 'flex flex-col items-center gap-1 text-slate-500'; document.getElementById('nav-stock').className = 'flex flex-col items-center gap-1 text-slate-500'; document.getElementById('nav-config').className = 'flex flex-col items-center gap-1 text-slate-500';
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden'); document.getElementById(`nav-${tabId}`).className = 'flex flex-col items-center gap-1 text-amber-500';
+            document.getElementById('tab-sales').classList.add('hidden');
+            document.getElementById('tab-web').classList.add('hidden');
+            document.getElementById('tab-stock').classList.add('hidden');
+            document.getElementById('tab-config').classList.add('hidden');
+            
+            document.getElementById('nav-sales').className = 'flex flex-col items-center gap-1 text-slate-500';
+            document.getElementById('nav-web').className = 'flex flex-col items-center gap-1 text-slate-500 relative';
+            document.getElementById('nav-stock').className = 'flex flex-col items-center gap-1 text-slate-500';
+            document.getElementById('nav-config').className = 'flex flex-col items-center gap-1 text-slate-500';
+            
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabId}`).className = `flex flex-col items-center gap-1 ${tabId === 'web' ? 'text-pink-400' : 'text-amber-500'} relative`;
         }
 
         function openAddProductModal() { document.getElementById('product-modal').classList.remove('hidden'); }
         function closeAddProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
 
         function saveNewProduct() {
-            const name = document.getElementById('new-prod-name').value.trim(); const price = parseFloat(document.getElementById('new-prod-price').value); const cost = parseFloat(document.getElementById('new-prod-cost').value); const stock = parseInt(document.getElementById('new-prod-stock').value) || 0;
-            if (!name || isNaN(price) || isNaN(cost)) return alert("Veuillez remplir correctement tous les champs.");
+            const name = document.getElementById('new-prod-name').value.trim(); const price = parseFloat(document.getElementById('new-prod-price').value); const stock = parseInt(document.getElementById('new-prod-stock').value) || 0;
+            if (!name || isNaN(price)) return alert("Veuillez remplir correctement les champs.");
             const newId = (100 + products.length + 1).toString(); 
-            products.push({ id: newId, name, price, cost, stock });
+            products.push({ id: newId, name, price, stock });
             localStorage.setItem('kanorah_catalog', JSON.stringify(products)); renderProducts(); renderStock(); closeAddProductModal();
-            document.getElementById('new-prod-name').value = ''; document.getElementById('new-prod-price').value = ''; document.getElementById('new-prod-cost').value = ''; document.getElementById('new-prod-stock').value = '';
+            document.getElementById('new-prod-name').value = ''; document.getElementById('new-prod-price').value = ''; document.getElementById('new-prod-stock').value = '';
         }
 
         function deleteProduct(id) {
-            if (confirm("Supprimer définitivement ce produit du catalogue ?")) { products = products.filter(p => p.id !== id); localStorage.setItem('kanorah_catalog', JSON.stringify(products)); renderProducts(); renderStock(); }
+            if (confirm("Supprimer ce produit du catalogue ?")) { products = products.filter(p => p.id !== id); localStorage.setItem('kanorah_catalog', JSON.stringify(products)); renderProducts(); renderStock(); }
         }
 
         function saveWebhook() { const url = document.getElementById('webhook-url').value.trim(); localStorage.setItem('kanorah_webhook', url); webhookUrl = url; alert("Liaison Google Sheets enregistrée !"); }
-        function copyScript() { const code = document.getElementById('apps-script-code'); code.select(); document.execCommand('copy'); alert("Le code Apps Script a été copié."); }
 
         function validateSale() {
             if (cart.length === 0) return alert("Le panier est vide.");
@@ -453,16 +594,13 @@ function doPost(e) {
             const received = parseFloat(document.getElementById('cash-received').value) || 0;
             if (received < total) return alert("La somme reçue est insuffisante.");
 
-            // 1. Déduction des stocks locaux
             cart.forEach(item => {
                 const targetProduct = products.find(p => p.id === item.id);
                 if(targetProduct) targetProduct.stock -= item.qty;
             });
 
-            // Sauvegarde catalogue mis à jour
             localStorage.setItem('kanorah_catalog', JSON.stringify(products));
 
-            // 2. Accumulation locale pour le bilan journalier
             dailyRevenue += total;
             dailySalesCount += 1;
             localStorage.setItem('kanorah_daily_revenue', dailyRevenue);
@@ -477,17 +615,12 @@ function doPost(e) {
             cart.forEach(item => { list.innerHTML += `<div class="flex justify-between gap-1"><span>${item.qty}x ${item.name}</span><span class="shrink-0">${item.total.toLocaleString()} XOF</span></div>`; });
             document.getElementById('rec-total').innerText = `${total.toLocaleString()} XOF`; document.getElementById('rec-received').innerText = `${received.toLocaleString()} XOF`; document.getElementById('rec-change').innerText = `${change.toLocaleString()} XOF`;
 
-            renderProducts(); renderStock(); // Rafraîchir les vues
+            renderProducts(); renderStock();
             document.getElementById('receipt-modal').classList.remove('hidden');
         }
 
-        // ENVOI DU RAPPORT GLOBAL
         function sendDailyReport() {
-            if(!webhookUrl) return alert("Veuillez d'abord configurer et enregistrer votre URL Webhook Google Sheets.");
-            if(dailySalesCount === 0) {
-                if(!confirm("Aucune vente n'a été enregistrée aujourd'hui. Voulez-vous tout de même exporter l'état actuel des stocks ?")) return;
-            }
-
+            if(!webhookUrl) return alert("Veuillez d'abord configurer votre URL Webhook Google Sheets.");
             const dateStr = new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
             
             const payload = {
@@ -504,17 +637,12 @@ function doPost(e) {
                 body: JSON.stringify(payload)
             })
             .then(() => {
-                alert("🎉 Bilan de fin de journée envoyé avec succès sur Google Sheets !");
-                // Remise à zéro des compteurs financiers locaux pour demain
-                dailyRevenue = 0;
-                dailySalesCount = 0;
+                alert("🎉 Bilan transmis avec succès sur Google Sheets !");
+                dailyRevenue = 0; dailySalesCount = 0;
                 localStorage.setItem('kanorah_daily_revenue', 0);
                 localStorage.setItem('kanorah_daily_sales_count', 0);
             })
-            .catch(err => {
-                console.error(err);
-                alert("Erreur lors de la transmission des données. Vérifiez votre connexion.");
-            });
+            .catch(err => alert("Erreur lors de la transmission."));
         }
 
         function openReceiptInNativeViewer() {
@@ -529,23 +657,20 @@ function doPost(e) {
             };
             html2pdf().set(options).from(element).output('blob').then(function (blob) {
                 const fileURL = URL.createObjectURL(blob);
-                const pdfWindow = window.open(fileURL, '_blank');
-                if(!pdfWindow || pdfWindow.closed || typeof pdfWindow.closed == 'undefined') {
-                    html2pdf().set(options).from(element).save();
-                }
+                window.open(fileURL, '_blank');
             });
         }
 
         function shareOnWhatsApp() {
             const name = document.getElementById('rec-client-name').innerText; const phone = document.getElementById('rec-client-phone').innerText; const place = document.getElementById('rec-client-place').innerText; const total = document.getElementById('rec-total').innerText; const received = document.getElementById('rec-received').innerText; const change = document.getElementById('rec-change').innerText; const ticketId = document.getElementById('rec-id').innerText; const dateStr = document.getElementById('rec-date').innerText;
             let itemsText = ""; cart.forEach(item => { itemsText += `• ${item.qty}x ${item.name} — ${item.total.toLocaleString()} XOF\n`; });
-            let message = `🧾 *KANORAH'S BOUTIQUE* 🧾\n_Vente & Livraison Professionnelle_\n\n📅 *Date :* ${dateStr}\n🔢 *Ticket N° :* ${ticketId}\n\n-------------------------\n📦 *DÉTAILS COMMANDE :*\n${itemsText}-------------------------\n\n💰 *TOTAL :* ${total}\n💵 *Somme Reçue :* ${received}\n🤝 *Monnaie Rendue :* ${change}\n\n📍 *LIVRAISON :*\n• *Client :* ${name}\n• *Contact :* ${phone}\n• *Lieu :* ${place}\n\n*NB :* Les produits saisis ne sont retournés ni échangés.\nMerci pour votre confiance ! À bientôt ! ✨`;
+            let message = `🧾 *KANORAH'S SKINCARE STORY* 🧾\n_Vente & Livraison Professionnelle_\n\n📅 *Date :* ${dateStr}\n🔢 *Ticket N° :* ${ticketId}\n\n-------------------------\n📦 *DÉTAILS COMMANDE :*\n${itemsText}-------------------------\n\n💰 *TOTAL :* ${total}\n💵 *Somme Reçue :* ${received}\n🤝 *Monnaie Rendue :* ${change}\n\n📍 *LIVRAISON :*\n• *Client :* ${name}\n• *Contact :* ${phone}\n• *Lieu :* ${place}\n\n*NB :* Les produits saisis ne sont retournés ni échangés.\nMerci pour votre confiance ! À bientôt ! ✨`;
             const encodedMessage = encodeURIComponent(message); const cleanPhone = phone.replace(/[^0-9]/g, "");
             let whatsappUrl = cleanPhone.length >= 8 ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}` : `https://api.whatsapp.com/send?text=${encodedMessage}`;
             window.open(whatsappUrl, '_blank');
         }
 
-        function closeReceipt() { cart = []; updateCart(); document.getElementById('client-name').value = ''; document.getElementById('client-contact').value = ''; document.getElementById('client-lieu').value = ''; document.getElementById('cash-received').value = ''; document.getElementById('receipt-modal').classList.add('hidden'); }
+        function closeReceipt() { cart = []; updateCart(); dismissNotification(); document.getElementById('client-name').value = ''; document.getElementById('client-contact').value = ''; document.getElementById('client-lieu').value = ''; document.getElementById('cash-received').value = ''; document.getElementById('receipt-modal').classList.add('hidden'); }
     </script>
 </body>
 </html>
