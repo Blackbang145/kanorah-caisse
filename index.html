@@ -66,12 +66,10 @@
 
         <main class="flex-grow p-4 overflow-y-auto">
             
-            <!-- BANNIÈRE DE NOTIFICATION FLASH (CLIQUEZ POUR VOIR) -->
+            <!-- BANNIÈRE DE NOTIFICATION FLASH -->
             <div id="order-notification" class="hidden bg-gradient-to-r from-pink-600 to-rose-600 text-white p-3.5 rounded-2xl mb-4 border border-pink-400 flex justify-between items-center animate-bounce shadow-lg cursor-pointer" onclick="switchTab('web')">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-xl">
-                        🔔
-                    </div>
+                    <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-xl">🔔</div>
                     <div>
                         <h4 class="text-xs font-bold uppercase tracking-wider">Nouvelle Commande Web !</h4>
                         <p id="notif-details" class="text-[11px] text-pink-100">Cliquer pour consulter les détails</p>
@@ -86,6 +84,7 @@
                     <h2 class="text-lg font-bold text-white">🛍️ Articles</h2>
                     <span id="cart-badge" class="bg-amber-500 text-slate-950 text-xs font-bold px-2.5 py-1 rounded-full">0 article</span>
                 </div>
+                
                 <div class="grid grid-cols-2 gap-3" id="products-grid"></div>
 
                 <div class="bg-slate-950 rounded-2xl p-4 border border-slate-800 space-y-4 mt-6">
@@ -127,21 +126,16 @@
                 </div>
             </section>
 
-            <!-- ONGLET 2 : COMMANDES WEB (NOUVELLE SECTION) -->
+            <!-- ONGLET 2 : COMMANDES WEB -->
             <section id="tab-web" class="hidden space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-lg font-bold text-white">🌐 Commandes En Ligne</h2>
                         <p class="text-xs text-slate-400">Historique des commandes envoyées depuis le site</p>
                     </div>
-                    <button onclick="clearWebOrders()" class="text-xs text-rose-400 bg-rose-500/10 px-2.5 py-1.5 rounded-lg border border-rose-500/20 hover:bg-rose-500/20">
-                        Effacer tout
-                    </button>
                 </div>
 
-                <div id="web-orders-container" class="space-y-3">
-                    <!-- Les cartes de commandes s'affichent ici -->
-                </div>
+                <div id="web-orders-container" class="space-y-3"></div>
             </section>
 
             <!-- ONGLET 3 : STOCK -->
@@ -299,109 +293,266 @@
         let webOrders = JSON.parse(localStorage.getItem('kanorah_web_orders')) || [];
         let cart = [];
         let webhookUrl = localStorage.getItem('kanorah_webhook') || "";
-        
         let dailyRevenue = parseFloat(localStorage.getItem('kanorah_daily_revenue')) || 0;
         let dailySalesCount = parseInt(localStorage.getItem('kanorah_daily_sales_count')) || 0;
 
         document.getElementById('webhook-url').value = webhookUrl;
-        renderProducts(); renderStock(); renderWebOrders();
+        
+        // Initialisation de l'affichage
+        renderProducts(); 
+        renderStock(); 
+        renderWebOrders();
 
-        // CANAL DE RECEPTION DES COMMANDES EN DIRECT
         const kanorahChannel = new BroadcastChannel('kanorah_orders_channel');
-
         kanorahChannel.onmessage = function (event) {
             const order = event.data;
             order.status = "Nouvelle";
             order.id = "ORD-" + Math.floor(1000 + Math.random() * 9000);
-            
-            // Sauvegarder dans la liste des commandes web
             webOrders.unshift(order);
             localStorage.setItem('kanorah_web_orders', JSON.stringify(webOrders));
-
-            // Sonnerie d'alerte
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioContext.createOscillator();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, audioContext.currentTime);
-                osc.connect(audioContext.destination);
-                osc.start();
-                osc.stop(audioContext.currentTime + 0.3);
-            } catch(e) {}
-
-            // Afficher bannière flash
+            
             const notifBanner = document.getElementById('order-notification');
             const notifDetails = document.getElementById('notif-details');
             if (notifBanner && notifDetails) {
-                notifDetails.innerText = `${order.clientName} — ${order.total.toLocaleString()} XOF (${order.items.length} produit(s))`;
+                notifDetails.innerText = `${order.clientName} — ${order.total.toLocaleString()} XOF`;
                 notifBanner.classList.remove('hidden');
             }
-
             renderWebOrders();
         };
+
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            products.forEach(p => {
+                grid.innerHTML += `
+                    <div onclick="addToCart('${p.id}')" class="bg-slate-950 hover:bg-slate-800 p-3 rounded-2xl border border-slate-800 cursor-pointer flex flex-col justify-between h-28 relative">
+                        <div class="flex justify-between items-center w-full">
+                            <span class="text-[10px] text-amber-500 font-bold">ID: ${p.id}</span>
+                            <span class="text-[10px] ${p.stock <= 2 ? 'text-rose-500 font-bold' : 'text-slate-400'}">Stock: ${p.stock}</span>
+                        </div>
+                        <h4 class="text-xs font-semibold text-white line-clamp-2 pr-1">${p.name}</h4>
+                        <span class="text-xs font-bold text-slate-300">${p.price.toLocaleString()} XOF</span>
+                    </div>
+                `;
+            });
+        }
+
+        function addToCart(id) {
+            const prod = products.find(p => p.id === id);
+            if (!prod) return;
+
+            if (prod.stock <= 0) {
+                return alert("Rupture de stock !");
+            }
+
+            const existingItem = cart.find(item => item.id === id);
+            if (existingItem) {
+                if (existingItem.qty + 1 > prod.stock) {
+                    return alert("Pas assez de stock disponible !");
+                }
+                existingItem.qty++;
+                existingItem.total = existingItem.qty * existingItem.price;
+            } else {
+                cart.push({ id: prod.id, name: prod.name, price: prod.price, qty: 1, total: prod.price });
+            }
+            updateCart();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+        }
+
+        function updateCartQuantity(index, newQty) {
+            const qty = parseInt(newQty);
+            if (isNaN(qty) || qty <= 0) return removeFromCart(index);
+
+            const item = cart[index];
+            const prod = products.find(p => p.id === item.id);
+
+            if (prod && qty > prod.stock) {
+                alert(`Stock max disponible : ${prod.stock}`);
+                item.qty = prod.stock;
+            } else {
+                item.qty = qty;
+            }
+            item.total = item.qty * item.price;
+            updateCart();
+        }
+
+        function updateCart() {
+            const container = document.getElementById('cart-items');
+            const badge = document.getElementById('cart-badge');
+            const totalEl = document.getElementById('total-amount');
+
+            const totalArticles = cart.reduce((sum, item) => sum + item.qty, 0);
+            const totalAmount = cart.reduce((sum, item) => sum + item.total, 0);
+
+            badge.innerText = `${totalArticles} article${totalArticles > 1 ? 's' : ''}`;
+            totalEl.innerText = `${totalAmount.toLocaleString()} XOF`;
+
+            if (cart.length === 0) {
+                container.innerHTML = `<p class="text-sm text-slate-500 text-center py-4">Le panier est actuellement vide.</p>`;
+                calculateChange();
+                return;
+            }
+
+            container.innerHTML = '';
+            cart.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                        <div class="flex-grow pr-2">
+                            <h5 class="text-xs font-semibold text-white line-clamp-1">${item.name}</h5>
+                            <span class="text-[10px] text-amber-500 font-bold">${item.price.toLocaleString()} XOF</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" value="${item.qty}" min="1" onchange="updateCartQuantity(${index}, this.value)" class="w-12 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-xs text-center text-white font-bold">
+                            <button onclick="removeFromCart(${index})" class="text-slate-500 hover:text-rose-400 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            calculateChange();
+        }
+
+        function quickCash(amount) {
+            const cashInput = document.getElementById('cash-received');
+            cashInput.value = (parseFloat(cashInput.value) || 0) + amount;
+            calculateChange();
+        }
+
+        function calculateChange() {
+            const totalAmount = cart.reduce((sum, item) => sum + item.total, 0);
+            const cashReceived = parseFloat(document.getElementById('cash-received').value) || 0;
+            const changeEl = document.getElementById('change-to-render');
+            const change = cashReceived - totalAmount;
+
+            if (change >= 0) {
+                changeEl.innerText = `${change.toLocaleString()} XOF`;
+                changeEl.className = "font-bold text-emerald-400 text-sm";
+            } else {
+                changeEl.innerText = `Reste : ${Math.abs(change).toLocaleString()} XOF`;
+                changeEl.className = "font-bold text-rose-400 text-sm";
+            }
+        }
+
+        function validateSale() {
+            if (cart.length === 0) return alert("Le panier est vide !");
+
+            const clientName = document.getElementById('client-name').value.trim() || "Client de Passage";
+            const clientContact = document.getElementById('client-contact').value.trim() || "N/A";
+            const clientLieu = document.getElementById('client-lieu').value.trim() || "Magasin";
+            const cashReceived = parseFloat(document.getElementById('cash-received').value) || 0;
+            const totalAmount = cart.reduce((sum, item) => sum + item.total, 0);
+
+            // Déduction du stock
+            cart.forEach(item => {
+                const prod = products.find(p => p.id === item.id);
+                if (prod) prod.stock = Math.max(0, prod.stock - item.qty);
+            });
+
+            localStorage.setItem('kanorah_catalog', JSON.stringify(products));
+
+            dailyRevenue += totalAmount;
+            dailySalesCount += 1;
+            localStorage.setItem('kanorah_daily_revenue', dailyRevenue.toString());
+            localStorage.setItem('kanorah_daily_sales_count', dailySalesCount.toString());
+
+            const now = new Date();
+            document.getElementById('rec-date').innerText = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('rec-id').innerText = '#' + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('rec-client-name').innerText = clientName;
+            document.getElementById('rec-client-phone').innerText = clientContact;
+            document.getElementById('rec-client-place').innerText = clientLieu;
+            document.getElementById('rec-total').innerText = `${totalAmount.toLocaleString()} XOF`;
+            document.getElementById('rec-received').innerText = `${cashReceived.toLocaleString()} XOF`;
+            document.getElementById('rec-change').innerText = `${Math.max(0, cashReceived - totalAmount).toLocaleString()} XOF`;
+
+            const recItemsList = document.getElementById('rec-items-list');
+            recItemsList.innerHTML = '';
+            cart.forEach(item => {
+                recItemsList.innerHTML += `<div class="flex justify-between"><span>${item.qty}x ${item.name}</span><span class="font-bold">${item.total.toLocaleString()} XOF</span></div>`;
+            });
+
+            document.getElementById('receipt-modal').classList.remove('hidden');
+
+            // TRANSITION PROPRE DU SCRIPT VERS GOOGLE SHEETS
+            if (webhookUrl) {
+                // Formater la liste des articles en texte clair pour Sheets
+                const articlesTexte = cart.map(i => `${i.qty}x ${i.name}`).join(", ");
+                
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        type: "VENTE_DIRECTE", 
+                        client: clientName, 
+                        contact: clientContact, 
+                        lieu: clientLieu, 
+                        total: totalAmount, 
+                        articles: articlesTexte 
+                    })
+                }).catch(err => console.error(err));
+            }
+
+            renderProducts();
+            renderStock();
+        }
+
+        function closeReceipt() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+            cart = [];
+            document.getElementById('client-name').value = '';
+            document.getElementById('client-contact').value = '';
+            document.getElementById('client-lieu').value = '';
+            document.getElementById('cash-received').value = '';
+            updateCart();
+        }
+
+        function openReceiptInNativeViewer() {
+            const element = document.getElementById('receipt-print');
+            html2pdf().set({ margin: 2, filename: 'Recu_Kanorah.pdf', jsPDF: { unit: 'mm', format: [58, 160] } }).from(element).save();
+        }
+
+        function shareOnWhatsApp() {
+            const text = `*KANORAH'S SKINCARE STORY*\nTicket: ${document.getElementById('rec-id').innerText}\nTotal: ${document.getElementById('rec-total').innerText}\nMerci pour votre achat !`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        function switchTab(tabName) {
+            ['sales', 'web', 'stock', 'config'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`nav-${t}`).className = "flex flex-col items-center gap-1 text-slate-500";
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabName}`).className = "flex flex-col items-center gap-1 text-amber-500";
+        }
 
         function renderWebOrders() {
             const container = document.getElementById('web-orders-container');
             const badge = document.getElementById('web-badge');
-            
             const newCount = webOrders.filter(o => o.status === "Nouvelle").length;
-            if (newCount > 0) {
-                badge.innerText = newCount;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
+            
+            if (newCount > 0) { badge.innerText = newCount; badge.classList.remove('hidden'); } 
+            else { badge.classList.add('hidden'); }
 
             if (webOrders.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-12 bg-slate-950 rounded-2xl border border-slate-800">
-                        <div class="text-3xl mb-2">🌐</div>
-                        <p class="text-sm font-bold text-slate-300">Aucune commande reçue</p>
-                        <p class="text-xs text-slate-500 mt-1">Les commandes passées sur le site apparaîtront ici.</p>
-                    </div>
-                `;
+                container.innerHTML = `<p class="text-sm text-slate-500 text-center py-8">Aucune commande web.</p>`;
                 return;
             }
 
             container.innerHTML = '';
             webOrders.forEach((order, index) => {
-                const dateObj = new Date(order.timestamp);
-                const dateFormatted = dateObj.toLocaleDateString('fr-FR') + ' à ' + dateObj.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-                
-                let itemsListHtml = '';
-                order.items.forEach(it => {
-                    itemsListHtml += `<div class="flex justify-between text-xs text-slate-300"><span>• ${it.qty}x ${it.name}</span><span class="font-bold">${it.total.toLocaleString()} XOF</span></div>`;
-                });
-
-                const statusBadge = order.status === "Nouvelle" 
-                    ? `<span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Nouveau</span>`
-                    : `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Traité</span>`;
-
                 container.innerHTML += `
-                    <div class="bg-slate-950 rounded-2xl p-4 border ${order.status === 'Nouvelle' ? 'border-pink-500/50' : 'border-slate-800'} space-y-3">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <h4 class="font-bold text-white text-sm">${order.clientName}</h4>
-                                    ${statusBadge}
-                                </div>
-                                <p class="text-[11px] text-slate-400 mt-0.5"><i class="fa-solid fa-phone text-[9px] mr-1"></i>${order.clientPhone} | <i class="fa-solid fa-location-dot text-[9px] mr-1"></i>${order.clientAddress}</p>
-                                <p class="text-[10px] text-slate-500">${dateFormatted}</p>
-                            </div>
-                            <button onclick="deleteWebOrder(${index})" class="text-slate-600 hover:text-rose-400 text-xs"><i class="fa-solid fa-trash"></i></button>
+                    <div class="bg-slate-950 p-4 rounded-2xl border ${order.status === 'Nouvelle' ? 'border-pink-500/50' : 'border-slate-800'} space-y-2">
+                        <div class="flex justify-between">
+                            <h4 class="font-bold text-white text-sm">${order.clientName}</h4>
+                            <span class="text-xs text-amber-500 font-bold">${order.total.toLocaleString()} XOF</span>
                         </div>
-
-                        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800/80 space-y-1">
-                            ${itemsListHtml}
-                            <div class="border-t border-slate-800 pt-1 mt-1 flex justify-between text-xs font-bold text-amber-500">
-                                <span>Total commande :</span>
-                                <span>${order.total.toLocaleString()} XOF</span>
-                            </div>
-                        </div>
-
-                        <button onclick="chargerDansCaisse(${index})" class="w-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/20 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-cart-arrow-down"></i> Charger dans la Caisse
-                        </button>
+                        <p class="text-xs text-slate-400">${order.clientPhone} — ${order.clientAddress}</p>
+                        <button onclick="chargerDansCaisse(${index})" class="w-full bg-slate-800 text-amber-400 py-2 rounded-xl text-xs font-bold mt-2">Charger en Caisse</button>
                     </div>
                 `;
             });
@@ -411,266 +562,73 @@
             const order = webOrders[index];
             order.status = "Traitée";
             localStorage.setItem('kanorah_web_orders', JSON.stringify(webOrders));
-
             document.getElementById('client-name').value = order.clientName;
             document.getElementById('client-contact').value = order.clientPhone;
             document.getElementById('client-lieu').value = order.clientAddress;
-
-            cart = order.items.map(item => ({
-                id: item.id || "WEB",
-                name: item.name,
-                price: item.price,
-                qty: item.qty,
-                total: item.total
-            }));
-
+            cart = order.items.map(i => ({ id: i.id || "WEB", name: i.name, price: i.price, qty: i.qty, total: i.total }));
             updateCart();
             renderWebOrders();
-            dismissNotification();
             switchTab('sales');
-        }
-
-        function deleteWebOrder(index) {
-            webOrders.splice(index, 1);
-            localStorage.setItem('kanorah_web_orders', JSON.stringify(webOrders));
-            renderWebOrders();
-        }
-
-        function clearWebOrders() {
-            if (confirm("Supprimer tout l'historique des commandes web ?")) {
-                webOrders = [];
-                localStorage.setItem('kanorah_web_orders', JSON.stringify(webOrders));
-                renderWebOrders();
-            }
-        }
-
-        function dismissNotification() {
-            document.getElementById('order-notification').classList.add('hidden');
-        }
-
-        function renderProducts() {
-            const grid = document.getElementById('products-grid');
-            grid.innerHTML = '';
-            products.forEach(p => {
-                const stockColor = p.stock <= 2 ? 'text-rose-500 font-bold' : 'text-slate-400';
-                grid.innerHTML += `
-                    <div onclick="addToCart('${p.id}')" class="bg-slate-950 hover:bg-slate-800 p-3 rounded-2xl border border-slate-800 cursor-pointer transition-all active:scale-95 flex flex-col justify-between h-28 relative">
-                        <div class="flex justify-between items-center w-full">
-                            <span class="text-[10px] text-amber-500 font-bold">ID: ${p.id}</span>
-                            <span class="text-[10px] ${stockColor}">Stock: ${p.stock}</span>
-                        </div>
-                        <h4 class="text-xs font-semibold text-white line-clamp-2 pr-1">${p.name}</h4>
-                        <span class="text-xs font-bold text-slate-300">${p.price.toLocaleString()} XOF</span>
-                    </div>
-                `;
-            });
         }
 
         function renderStock() {
             const list = document.getElementById('stock-list');
+            if (!list) return;
             list.innerHTML = '';
             products.forEach(p => {
                 list.innerHTML += `
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col gap-3">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-semibold text-white text-sm">${p.name}</h4>
-                                <p class="text-xs text-slate-500">ID: ${p.id} — Prix : ${p.price.toLocaleString()} XOF</p>
-                            </div>
-                            <button onclick="deleteProduct('${p.id}')" class="text-rose-500 hover:text-rose-400 text-sm"><i class="fa-solid fa-trash"></i></button>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <div>
+                            <h4 class="font-semibold text-white text-xs">${p.name}</h4>
+                            <p class="text-[10px] text-slate-500">ID: ${p.id} | ${p.price.toLocaleString()} XOF</p>
                         </div>
-                        <div class="flex items-center gap-2 bg-slate-900 p-2 rounded-lg border border-slate-800">
-                            <span class="text-xs text-slate-400 shrink-0">Quantité en stock :</span>
-                            <input type="number" value="${p.stock}" onchange="updateSingleStock('${p.id}', this.value)" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-amber-500 font-bold text-center focus:outline-none focus:border-amber-500">
-                        </div>
+                        <input type="number" value="${p.stock}" onchange="updateSingleStock('${p.id}', this.value)" class="w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-amber-500 font-bold text-center">
                     </div>
                 `;
             });
         }
 
         function updateSingleStock(id, newQty) {
-            const qty = parseInt(newQty);
-            if(isNaN(qty) || qty < 0) return alert("Quantité invalide");
             const prod = products.find(p => p.id === id);
-            if(prod) {
-                prod.stock = qty;
+            if (prod) {
+                prod.stock = Math.max(0, parseInt(newQty) || 0);
                 localStorage.setItem('kanorah_catalog', JSON.stringify(products));
                 renderProducts();
             }
-        }
-
-        function addToCart(id) {
-            const prod = products.find(p => p.id === id); if (!prod) return;
-            const currentCartItem = cart.find(item => item.id === id);
-            const currentCartQty = currentCartItem ? currentCartItem.qty : 0;
-            if(prod.stock <= currentCartQty) {
-                alert(`Stock insuffisant pour ${prod.name} (${prod.stock} restant(s))`);
-                return;
-            }
-
-            if (existing = cart.find(item => item.id === id)) { existing.qty++; existing.total = existing.qty * existing.price; }
-            else { cart.push({ id: prod.id, name: prod.name, price: prod.price, qty: 1, total: prod.price }); }
-            updateCart();
-        }
-
-        function updateCart() {
-            const container = document.getElementById('cart-items');
-            const badge = document.getElementById('cart-badge');
-            const totalLabel = document.getElementById('total-amount');
-
-            if (cart.length === 0) {
-                container.innerHTML = '<p class="text-sm text-slate-500 text-center py-4">Le panier est actuellement vide.</p>';
-                badge.innerText = '0 article'; totalLabel.innerText = '0 XOF';
-                document.getElementById('change-to-render').innerText = '0 XOF'; return;
-            }
-
-            badge.innerText = `${cart.reduce((sum, item) => sum + item.qty, 0)} articles`;
-            container.innerHTML = ''; let total = 0;
-            cart.forEach((item, index) => {
-                total += item.total;
-                container.innerHTML += `
-                    <div class="flex justify-between items-center text-sm">
-                        <div class="flex-grow pr-2">
-                            <span class="font-semibold text-white text-xs block truncate max-w-[180px]">${item.name}</span>
-                            <p class="text-[11px] text-slate-400">${item.qty}x ${item.price.toLocaleString()} XOF</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-300 text-xs">${item.total.toLocaleString()} XOF</span>
-                            <button onclick="removeFromCart(${index})" class="text-rose-500 hover:text-rose-400"><i class="fa-solid fa-circle-minus"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-            totalLabel.innerText = `${total.toLocaleString()} XOF`; calculateChange();
-        }
-
-        function removeFromCart(index) { cart.splice(index, 1); updateCart(); }
-        function quickCash(amount) { document.getElementById('cash-received').value = amount; calculateChange(); }
-
-        function calculateChange() {
-            const total = cart.reduce((sum, item) => sum + item.total, 0);
-            const received = parseFloat(document.getElementById('cash-received').value) || 0;
-            const changeLabel = document.getElementById('change-to-render');
-            if (received < total) { changeLabel.innerText = "Somme insuffisante"; changeLabel.className = "font-bold text-rose-500 text-sm"; }
-            else { const change = received - total; changeLabel.innerText = `${change.toLocaleString()} XOF`; changeLabel.className = "font-bold text-emerald-400 text-sm"; }
-        }
-
-        function switchTab(tabId) {
-            document.getElementById('tab-sales').classList.add('hidden');
-            document.getElementById('tab-web').classList.add('hidden');
-            document.getElementById('tab-stock').classList.add('hidden');
-            document.getElementById('tab-config').classList.add('hidden');
-            
-            document.getElementById('nav-sales').className = 'flex flex-col items-center gap-1 text-slate-500';
-            document.getElementById('nav-web').className = 'flex flex-col items-center gap-1 text-slate-500 relative';
-            document.getElementById('nav-stock').className = 'flex flex-col items-center gap-1 text-slate-500';
-            document.getElementById('nav-config').className = 'flex flex-col items-center gap-1 text-slate-500';
-            
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            document.getElementById(`nav-${tabId}`).className = `flex flex-col items-center gap-1 ${tabId === 'web' ? 'text-pink-400' : 'text-amber-500'} relative`;
         }
 
         function openAddProductModal() { document.getElementById('product-modal').classList.remove('hidden'); }
         function closeAddProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
 
         function saveNewProduct() {
-            const name = document.getElementById('new-prod-name').value.trim(); const price = parseFloat(document.getElementById('new-prod-price').value); const stock = parseInt(document.getElementById('new-prod-stock').value) || 0;
-            if (!name || isNaN(price)) return alert("Veuillez remplir correctement les champs.");
-            const newId = (100 + products.length + 1).toString(); 
-            products.push({ id: newId, name, price, stock });
-            localStorage.setItem('kanorah_catalog', JSON.stringify(products)); renderProducts(); renderStock(); closeAddProductModal();
-            document.getElementById('new-prod-name').value = ''; document.getElementById('new-prod-price').value = ''; document.getElementById('new-prod-stock').value = '';
-        }
+            const name = document.getElementById('new-prod-name').value.trim();
+            const price = parseFloat(document.getElementById('new-prod-price').value);
+            const stock = parseInt(document.getElementById('new-prod-stock').value) || 0;
 
-        function deleteProduct(id) {
-            if (confirm("Supprimer ce produit du catalogue ?")) { products = products.filter(p => p.id !== id); localStorage.setItem('kanorah_catalog', JSON.stringify(products)); renderProducts(); renderStock(); }
-        }
+            if (!name || isNaN(price)) return alert("Champs invalides.");
 
-        function saveWebhook() { const url = document.getElementById('webhook-url').value.trim(); localStorage.setItem('kanorah_webhook', url); webhookUrl = url; alert("Liaison Google Sheets enregistrée !"); }
-
-        function validateSale() {
-            if (cart.length === 0) return alert("Le panier est vide.");
-            const total = cart.reduce((sum, item) => sum + item.total, 0);
-            const received = parseFloat(document.getElementById('cash-received').value) || 0;
-            if (received < total) return alert("La somme reçue est insuffisante.");
-
-            cart.forEach(item => {
-                const targetProduct = products.find(p => p.id === item.id);
-                if(targetProduct) targetProduct.stock -= item.qty;
-            });
-
+            products.push({ id: (200 + products.length + 1).toString(), name, price, stock });
             localStorage.setItem('kanorah_catalog', JSON.stringify(products));
+            renderProducts(); renderStock(); closeAddProductModal();
+        }
 
-            dailyRevenue += total;
-            dailySalesCount += 1;
-            localStorage.setItem('kanorah_daily_revenue', dailyRevenue);
-            localStorage.setItem('kanorah_daily_sales_count', dailySalesCount);
-
-            const name = document.getElementById('client-name').value || "Client Comptant"; const contact = document.getElementById('client-contact').value || "N/A"; const lieu = document.getElementById('client-lieu').value || "Boutique"; const change = received - total;
-            const ticketId = Math.floor(100000 + Math.random() * 900000); const dateStr = new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-
-            document.getElementById('rec-date').innerText = dateStr; document.getElementById('rec-id').innerText = ticketId; document.getElementById('rec-client-name').innerText = name.toUpperCase(); document.getElementById('rec-client-phone').innerText = contact; document.getElementById('rec-client-place').innerText = lieu;
-            
-            const list = document.getElementById('rec-items-list'); list.innerHTML = '';
-            cart.forEach(item => { list.innerHTML += `<div class="flex justify-between gap-1"><span>${item.qty}x ${item.name}</span><span class="shrink-0">${item.total.toLocaleString()} XOF</span></div>`; });
-            document.getElementById('rec-total').innerText = `${total.toLocaleString()} XOF`; document.getElementById('rec-received').innerText = `${received.toLocaleString()} XOF`; document.getElementById('rec-change').innerText = `${change.toLocaleString()} XOF`;
-
-            renderProducts(); renderStock();
-            document.getElementById('receipt-modal').classList.remove('hidden');
+        function saveWebhook() {
+            webhookUrl = document.getElementById('webhook-url').value.trim();
+            localStorage.setItem('kanorah_webhook', webhookUrl);
+            alert("Lien enregistré !");
         }
 
         function sendDailyReport() {
-            if(!webhookUrl) return alert("Veuillez d'abord configurer votre URL Webhook Google Sheets.");
-            const dateStr = new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-            
-            const payload = {
-                date: dateStr,
-                totalSalesCount: dailySalesCount,
-                revenueTotal: dailyRevenue,
-                currentStock: products.map(p => ({ id: p.id, name: p.name, stock: p.stock, price: p.price }))
-            };
-
+            if (!webhookUrl || dailySalesCount === 0) return alert("Rien à envoyer ou Webhook manquant.");
             fetch(webhookUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(() => {
-                alert("🎉 Bilan transmis avec succès sur Google Sheets !");
+                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: "BILAN_JOURNEE", date: new Date().toLocaleDateString('fr-FR'), nombreVentes: dailySalesCount, chiffreAffaires: dailyRevenue })
+            }).then(() => {
+                alert("Bilan envoyé !");
                 dailyRevenue = 0; dailySalesCount = 0;
-                localStorage.setItem('kanorah_daily_revenue', 0);
-                localStorage.setItem('kanorah_daily_sales_count', 0);
-            })
-            .catch(err => alert("Erreur lors de la transmission."));
-        }
-
-        function openReceiptInNativeViewer() {
-            const element = document.getElementById('receipt-print');
-            const ticketId = document.getElementById('rec-id').innerText;
-            const options = {
-                margin: [2, 2, 2, 2],
-                filename: `Facture_Kanorah_${ticketId}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 3, useCORS: true },
-                jsPDF: { unit: 'mm', format: [58, 145], orientation: 'portrait' }
-            };
-            html2pdf().set(options).from(element).output('blob').then(function (blob) {
-                const fileURL = URL.createObjectURL(blob);
-                window.open(fileURL, '_blank');
+                localStorage.removeItem('kanorah_daily_revenue'); localStorage.removeItem('kanorah_daily_sales_count');
             });
         }
-
-        function shareOnWhatsApp() {
-            const name = document.getElementById('rec-client-name').innerText; const phone = document.getElementById('rec-client-phone').innerText; const place = document.getElementById('rec-client-place').innerText; const total = document.getElementById('rec-total').innerText; const received = document.getElementById('rec-received').innerText; const change = document.getElementById('rec-change').innerText; const ticketId = document.getElementById('rec-id').innerText; const dateStr = document.getElementById('rec-date').innerText;
-            let itemsText = ""; cart.forEach(item => { itemsText += `• ${item.qty}x ${item.name} — ${item.total.toLocaleString()} XOF\n`; });
-            let message = `🧾 *KANORAH'S SKINCARE STORY* 🧾\n_Vente & Livraison Professionnelle_\n\n📅 *Date :* ${dateStr}\n🔢 *Ticket N° :* ${ticketId}\n\n-------------------------\n📦 *DÉTAILS COMMANDE :*\n${itemsText}-------------------------\n\n💰 *TOTAL :* ${total}\n💵 *Somme Reçue :* ${received}\n🤝 *Monnaie Rendue :* ${change}\n\n📍 *LIVRAISON :*\n• *Client :* ${name}\n• *Contact :* ${phone}\n• *Lieu :* ${place}\n\n*NB :* Les produits saisis ne sont retournés ni échangés.\nMerci pour votre confiance ! À bientôt ! ✨`;
-            const encodedMessage = encodeURIComponent(message); const cleanPhone = phone.replace(/[^0-9]/g, "");
-            let whatsappUrl = cleanPhone.length >= 8 ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}` : `https://api.whatsapp.com/send?text=${encodedMessage}`;
-            window.open(whatsappUrl, '_blank');
-        }
-
-        function closeReceipt() { cart = []; updateCart(); dismissNotification(); document.getElementById('client-name').value = ''; document.getElementById('client-contact').value = ''; document.getElementById('client-lieu').value = ''; document.getElementById('cash-received').value = ''; document.getElementById('receipt-modal').classList.add('hidden'); }
     </script>
 </body>
 </html>
