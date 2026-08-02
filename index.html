@@ -490,10 +490,17 @@
             document.getElementById('rec-id').innerText = '#' + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('rec-total').innerText = `${totalAmount.toLocaleString()} XOF`;
 
+            // Envoi des articles sur le reçu avec filtrage automatique des parenthèses/promos
             const recItemsList = document.getElementById('rec-items-list');
             recItemsList.innerHTML = '';
             cart.forEach(item => {
-                recItemsList.innerHTML += `<div class="flex justify-between"><span>${item.qty}x ${item.name}</span><span class="font-bold">${item.total.toLocaleString()} XOF</span></div>`;
+                const cleanName = item.name.replace(/\s*\([^)]*\)/g, '').trim();
+                recItemsList.innerHTML += `
+                    <div class="flex justify-between">
+                        <span>${item.qty}x ${cleanName}</span>
+                        <span class="font-bold">${item.total.toLocaleString()} XOF</span>
+                    </div>
+                `;
             });
 
             document.getElementById('receipt-modal').classList.remove('hidden');
